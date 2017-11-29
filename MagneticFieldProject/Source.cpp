@@ -2,25 +2,24 @@
 #include <cmath>
 #include <vector>
 #include <fstream>
+#include <ctime>
+#include <algorithm>
+
 using namespace std;
 
-/* GLOBALS */
 double PI = 3.1415926535897932384626433832;
 double ROE = 6378.1; // Radius of earth in kilometers
-					 /*END GLOBALS*/
-
+					 
 class Coordinate {
 public:
 	double latitude;
 	double longitude;
 	double latitude_degree;
 	double longitude_degree;
-	double magnetic_x;
-	double magnetic_y;
-	double magnetic_z;
+	double magnetic_field;
 
 	Coordinate() {
-		latitude, longitude, latitude_degree, longitude_degree, magnetic_x, magnetic_y, magnetic_z = 0;
+		latitude, longitude, latitude_degree, longitude_degree, magnetic_field = 0;
 	}
 
 	Coordinate(double lat, double lon) {
@@ -33,11 +32,19 @@ double deg2rad(double degree) {
 	return ((degree * PI) / 180);
 }
 
-vector<Coordinate> PointsCalculator(double latitude, double longitude, double baring, double distance) {
+bool cmd_lon(Coordinate const & a, Coordinate const & b) {
+	return a.longitude < b.longitude;
+}
+
+bool cmd_lat(Coordinate const & a, Coordinate const & b) {
+	return a.latitude < b.latitude;
+}
+
+vector<Coordinate> PointsCalculator(double latitude, double longitude, double bearing, double distance) {
 	double lat1 = latitude; // start latitude
 	double lon1 = longitude; // start longitude
 	double d = distance; // distance bettween each point in meters
-	double brng1 = baring; // degree between reference points
+	double brng1 = bearing; // degree between reference points
 
 	double lat2 = 0; // update latitude point
 	double lon2 = 0; //update longitude point
@@ -74,14 +81,15 @@ vector<Coordinate> PointsCalculator(double latitude, double longitude, double ba
 }
 
 int main() {
-	double HBarings[4] = { deg2rad(279.0128), deg2rad(98.75389) }; //horizontal barings
-	double VBarings[2] = { deg2rad(188.94), deg2rad(8.89667) }; // vertical barings
+	double HBearings[2] = { deg2rad(279.0128), deg2rad(98.75389) }; //horizontal bearings + - 
+	double VBearings[2] = { deg2rad(188.94), deg2rad(8.89667) }; // vertical bearings + -
 
 	vector<vector<Coordinate>> Axis; // coordinates on x axis
 	vector<vector<Coordinate>> Q1;
 	vector<vector<Coordinate>> Q2;
 	vector<vector<Coordinate>> Q3;
 	vector<vector<Coordinate>> Q4;
+	vector<vector<Coordinate>> Temp1,Temp2, Temp3,Temp4;
 
 	double lat = deg2rad(26.305995); // starting latitude
 	double lon = deg2rad(-98.194208); // starting longitude
@@ -89,25 +97,35 @@ int main() {
 									  // 
 	for (int i = 0; i < 4; i++)
 	{
-		Axis.push_back(PointsCalculator(lat, lon, HBarings[i], 0.01));
+		Axis.push_back(PointsCalculator(lat, lon, HBearings[i], 0.01));
 	}
 
 
-	/* Finding Quadrants */
-	for (int q = 0; q < 100; q++) { // Quadrant 1 and 4
-		Q4.push_back(PointsCalculator(Axis[0][q].latitude, Axis[0][q].longitude, VBarings[0], 0.01));
-		Q1.push_back(PointsCalculator(Axis[0][q].latitude, Axis[0][q].longitude, VBarings[1], 0.01));
-		Q3.push_back(PointsCalculator(Axis[1][q].latitude, Axis[1][q].longitude, VBarings[0], 0.01));
-		Q2.push_back(PointsCalculator(Axis[1][q].latitude, Axis[1][q].longitude, VBarings[1], 0.01));
+	for (int a = 0; a < 100; a++) { // Quadrant 1 and 4
+
+		Q4.push_back(PointsCalculator(Axis[0][a].latitude, Axis[0][a].longitude, VBearings[0], 0.01));
+		Q1.push_back(PointsCalculator(Axis[0][a].latitude, Axis[0][a].longitude, VBearings[1], 0.01));
+		Q3.push_back(PointsCalculator(Axis[1][a].latitude, Axis[1][a].longitude, VBearings[0], 0.01));
+		Q2.push_back(PointsCalculator(Axis[1][a].latitude, Axis[1][a].longitude, VBearings[1], 0.01));
 	}
 
-	for (int x = 0; x < 100; x++) {
-		cout << "Coordinate 0deg: " << Q3[x][0].latitude_degree << Q3[x][0].longitude_degree << endl;
-		cout << "Coordinate 50deg: " << Q3[x][49].latitude_degree << Q3[x][49].longitude_degree << endl;
-		cout << "Coordinate 100deg: " << Q3[x][99].latitude_degree << Q3[x][99].longitude_degree << endl;
+	/*
+	for (int e = 0; e < 100; e++) {
+		cout << "Coordinate 0deg: " << Q3[e][0].latitude_degree << Q3[e][0].longitude_degree << endl;
+		cout << "Coordinate 50deg: " << Q3[e][49].latitude_degree << Q3[e][49].longitude_degree << endl;
+		cout << "Coordinate 100deg: " << Q3[e][99].latitude_degree << Q3[e][99].longitude_degree << endl;
 	}
+	*/
 
+	Temp3 = Q3;
+	cout << Temp3[0].size() << endl;
 
+	std::sort(Temp3[0].begin(), Temp3[0].end(), cmd_lon);
+	for (int i = 0; i < Temp3[0].size(); ++i)
+		cout << Temp3[0][i].longitude_degree << " ";
+
+	cout << endl;
+		
 	system("pause");
 	return 0;
 } 
